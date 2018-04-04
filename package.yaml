@@ -1,0 +1,19 @@
+name:                powser
+version:             0.1.1
+github:              "Sophia-Gold/powser"
+license:             BSD3
+author:              "Doug McIlroy"
+maintainer:          "sophiagoldnyc@gmail.com"
+copyright:           "2007 Doug McIlroy"
+
+extra-source-files:
+- README.md
+
+description:         Please see the README on Github at <https://github.com/Sophia-Gold/powser#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+
+library:
+  source-dirs:
+    - src/
