@@ -5,11 +5,16 @@
 
 module PowerSerious where
 
+import Data.Ratio
+
 default (Integer, Rational)
 infixr 9 #
 
 newtype PowS a = PowS [a] deriving (Eq, Show)
 -- newtype PowS a = PowS { fromPowS :: [a] } deriving Eq
+
+instance Show Rational where
+  show a = (show $ numerator a) ++ "/" ++ (show $ denominator a)
 
 instance (Num a, Eq a) => Num (PowS a) where
    fromInteger c = fromInteger c
