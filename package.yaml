@@ -13,6 +13,7 @@ description:         Please see the README on Github at <https://github.com/Soph
 
 dependencies:
 - base >= 4.7 && < 5
+- split
 
 library:
   source-dirs:

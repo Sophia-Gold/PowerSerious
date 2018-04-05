@@ -1,20 +1,26 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE OverlappingInstances       #-}
+{-# OPTIONS_GHC -Wno-missing-methods    #-}
 
 module PowerSerious where
 
+import Data.List
+import Data.List.Split
 import Data.Ratio
 
-default (Integer, Rational)
+default (Integer, Rational, Double)
 infixr 9 #
 
-newtype PowS a = PowS [a] deriving (Eq, Show)
+newtype PowS a = PowS [a] deriving Eq
 -- newtype PowS a = PowS { fromPowS :: [a] } deriving Eq
 
-instance Show Rational where
-  show a = (show $ numerator a) ++ "/" ++ (show $ denominator a)
+instance {-# OVERLAPPING #-} Show a => Show (PowS (Ratio a)) where 
+  show (PowS ps) = intercalate " + " $ showPS ps where
+    showPS ps = map (\p -> (show $ numerator p) ++ "/" ++ (show $ denominator p)) ps
+
+instance Show a => Show (PowS a) where 
+  show (PowS ps) = intercalate " + " $ splitOn "," (init $ tail $ show ps)
 
 instance (Num a, Eq a) => Num (PowS a) where
    fromInteger c = fromInteger c
@@ -25,7 +31,7 @@ instance (Num a, Eq a) => Num (PowS a) where
    fs + PowS [] = fs
    PowS [] + gs = gs
 
-   PowS (0:ft) * gs = PowS (0:t) where PowS t =  PowS ft * gs   -- caveat: 0*diverge = 0
+   PowS (0:ft) * gs = PowS (0:t) where PowS t = PowS ft * gs   -- caveat: 0*diverge = 0
    PowS fs * PowS (0:gt) = PowS (0:t) where PowS t =  PowS fs * PowS gt
    PowS (f:ft) * PowS gs@(g:gt) = PowS (f*g:t) where PowS t =  PowS ft * PowS gs + PowS [f] * PowS gt
    _ * _ = PowS []
