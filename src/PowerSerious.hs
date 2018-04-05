@@ -5,10 +5,10 @@
 
 module PowerSerious where
 
-default (Integer,Rational,Double)
+default (Integer, Rational)
 infixr 9 #
 
-newtype PowS a = PowS [a] deriving Eq
+newtype PowS a = PowS [a] deriving (Eq, Show)
 -- newtype PowS a = PowS { fromPowS :: [a] } deriving Eq
 
 instance (Num a, Eq a) => Num (PowS a) where
@@ -63,3 +63,6 @@ coss = 1 - int sins
 
 pascal :: (Eq a, Fractional a, Num (PowS a), Fractional (PowS a)) => PowS (PowS a)
 pascal = 1 / PowS [1, - PowS [1,1]]
+
+takeS :: (Num (PowS a), Fractional (PowS a)) => Int -> PowS a -> PowS a
+takeS i (PowS s) = PowS (take i s)
