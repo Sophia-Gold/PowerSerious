@@ -1,55 +1,64 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE OverlappingInstances       #-}
 
 module PowerSerious where
 
 default (Integer,Rational,Double)
 infixr 9 #
 
-newtype Diff a = Diff a deriving (Eq, Ord)
+newtype PowS a = PowS a deriving Eq
+-- newtype PowS a = PowS { fromPowS :: a } deriving Eq
 
-instance Num (Diff [a]) where
-   fromInteger (Diff c) = Diff [fromInteger c]
+instance (Num a, Eq a) => Num (PowS [a]) where
+   fromInteger c = PowS [fromInteger c]
 
-   negate (Diff fs) = Diff (map negate fs)
+   negate (PowS fs) = PowS (map negate fs)
 
-   Diff (f:ft) + Diff (g:gt) = Diff (f+g : ft+gt)
-   Diff fs + Diff [] = Diff fs
-   Diff [] + Diff gs = Diff gs
+   PowS (f:ft) + PowS (g:gt) = PowS (f+g:t) where PowS t = PowS ft + PowS gt
+   fs + PowS [] = fs
+   PowS [] + gs = gs
 
-   Diff (0:ft) * Diff gs = Diff (0 : ft*gs)   -- caveat: 0*diverge = 0
-   Diff fs * Diff (0:gt) = Diff (0 : fs*gt)
-   Diff (f:ft) * Diff gs@(g:gt) = Diff (f*g : ft*gs + [f]*gt)
-   _ * _ = Diff []
+   PowS (0:ft) * gs = PowS (0:t) where PowS t =  PowS ft * gs   -- caveat: 0*diverge = 0
+   PowS fs * PowS (0:gt) = PowS (0:t) where PowS t =  PowS fs * PowS gt
+   PowS (f:ft) * PowS gs@(g:gt) = PowS (f*g:t) where PowS t =  PowS ft * PowS gs + PowS [f] * PowS gt
+   _ * _ = PowS []
 
-instance Fractional (Diff [a]) where
-   fromRational (Diff c) = Diff [fromRational c]
+instance (Fractional a, Eq a) => Fractional (PowS [a]) where
+   fromRational c = PowS [fromRational c]
 
-   Diff (0:ft) / Diff gs@(0:gt) = Diff ft/gt
-   Diff (0:ft) / Diff gs@(g:gt) = Diff (0 : ft/gs)
-   Diff (f:ft) / Diff gs@(g:gt) = Diff (f/g : (ft-[f/g]*gt)/gs)
-   [] / Diff (0:gt) = Diff []/gt
-   [] / Diff (g:gt) = []
+   PowS (0:ft) / PowS gs@(0:gt) = PowS ft / PowS gt
+   PowS (0:ft) / gs = PowS (0:t) where PowS t = PowS ft / gs
+   PowS (f:ft) / PowS gs@(g:gt) = PowS (f/g:t) where PowS t = PowS ft - PowS [f/g] * PowS gt / PowS gs
+   PowS [] / PowS (0:gt) = PowS [] / PowS gt
+   PowS [] / PowS (g:gt) = PowS []
    _ / _ = error "improper power series division"
 
-(f:ft) # gs@(0:gt) = f : gt*(ft#gs)
-(f:ft) # gs@(g:gt) = [f] + gs*(ft#gs) -- ft must be polynomial
+(#) :: (Eq a, Num a, Fractional a, Num (PowS [a]), Fractional (PowS [a])) => [a] -> [a] -> [a]
+(f:ft) # gs@(0:gt) = f : gt * ft # gs
+(f:ft) # gs@(g:gt) = [f] + gs * ft # gs -- ft must be polynomial
 [] # _ = []
 (f:_) # [] = [f]
 
-revert (_:0:_) = error "revert f where f'(0)==0"
-revert (0:ft) = rs where rs = 0 : 1/(ft#rs)
+revert :: (Eq a, Num a, Fractional a, Num (PowS [a]), Fractional (PowS [a])) => [a] -> [a]
+revert (_:0:_) = error "revert f where f'(0)==0" 
+revert (0:ft) = rs where rs = 0 : 1 / ft # rs
 revert [f,f'] = [-f/f',1/f']
 revert _ = error "revert f where f(0)/=0"
 
+int :: (Num a, Fractional a, Num (PowS [a]), Fractional (PowS [a])) => [a] -> [a]
 int fs = 0 : zipWith (/) fs (map fromInteger [1..])
 
+diff :: (Num a, Fractional a, Num (PowS [a]), Fractional (PowS [a])) => [a] -> [a]
 diff (_:ft) = zipWith (*) ft (map fromInteger [1..])
 
 tans = revert(int(1/(1:0:1)))
+
+sins :: (Num a, Fractional a, Num (PowS [a]), Fractional (PowS [a])) => [a]
 sins = int coss
+
+coss :: (Num a, Fractional a, Num (PowS [a]), Fractional (PowS [a])) => [a]
 coss = 1 - int sins
 
+pascal :: (Num a, Fractional a, Num (PowS [a]), Fractional (PowS [a])) => [[a]]
 pascal = 1/[1, -[1,1]]
