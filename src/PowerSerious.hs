@@ -74,21 +74,3 @@ diff fs = PowS' $ zipWith (*) (tail $ fromPowS fs) (map fromInteger [1..])
 
 takeS :: Int -> PowS' a -> PowS' a
 takeS i s = PowS' (take i $ fromPowS s)
-
-exps :: PowS
-exps = 1 + int exps
-
-sins :: PowS
-sins = int coss
-
-coss :: PowS
-coss = 1 - int sins
-
--- tans :: PowS
--- tans = revert $ int (1 / PowS' [1,0,1])
-
-tans :: PowS
-tans = sins / coss
-
-pascal :: PowS2
-pascal = 1 / PowS' [1, - PowS' [1,1]]
