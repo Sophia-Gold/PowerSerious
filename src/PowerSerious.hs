@@ -1,7 +1,6 @@
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE RankNTypes                 #-}
 {-# OPTIONS_GHC -Wno-missing-methods    #-}
 
 module PowerSerious where
@@ -10,24 +9,20 @@ import Data.List
 import Data.List.Split
 import Data.Ratio
 
-default (Integer, Rational, Double)
-
 newtype PowS' a = PowS' { fromPowS :: [a] } deriving Eq
 
-type PowS = forall a . (Eq a, Fractional a) => PowS' a
-type PowS2 = forall a . (Eq a, Fractional a) => PowS' (PowS' a)
+type PowS = PowS' Rational
+type PowS2 = PowS' (PowS' Rational)
 
 instance {-# OVERLAPPING #-} Show (PowS' Rational) where
   show ps = intercalate " + " $ showPS $ fromPowS ps where
     showPS ps = map (\p -> (show $ numerator p) ++ "/" ++ (show $ denominator p)) ps
 
-instance {-# INCOHERENT #-} Show a => Show (PowS' a) where
-  show ps = intercalate " + " $ splitOn "," (init $ tail $ show $ fromPowS ps)
-
 instance {-# OVERLAPPING #-} Show a => Show (PowS' (PowS' a)) where
-  show ps = intercalate " + " $ splitOn "," $ init $ tail $
+  show ps = intercalate "" $ splitOn " % 1" $
+            intercalate " + " $ splitOn "," $ init $ tail $
             intercalate "\n" $ splitOn "],[" (init $ tail $ show $ (fromPowS <$> fromPowS ps))
-  
+
 instance (Num a, Eq a) => Num (PowS' a) where
   fromInteger c = PowS' [fromInteger c]
   
@@ -89,11 +84,11 @@ sins = int coss
 coss :: PowS
 coss = 1 - int sins
 
-tans :: PowS
-tans = revert $ int (1 / PowS' [1,0,1])
+-- tans :: PowS
+-- tans = revert $ int (1 / PowS' [1,0,1])
 
-tans' :: PowS
-tans' = sins / coss
+tans :: PowS
+tans = sins / coss
 
 pascal :: PowS2
 pascal = 1 / PowS' [1, - PowS' [1,1]]
