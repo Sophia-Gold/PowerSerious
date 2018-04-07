@@ -72,5 +72,10 @@ int fs = PowS' (0 : zipWith (/) (fromPowS fs) (map fromInteger [1..]))
 diff :: (Num a) => PowS' a -> PowS' a
 diff fs = PowS' $ zipWith (*) (tail $ fromPowS fs) (map fromInteger [1..])
 
+-- replaces `take` from prelude
 takeS :: Int -> PowS' a -> PowS' a
 takeS i s = PowS' (take i $ fromPowS s)
+
+-- like `takeS` but returns a vanilla list
+takeList :: Int -> PowS' a -> [a]
+takeList i s = take i $ fromPowS s
