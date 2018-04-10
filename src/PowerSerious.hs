@@ -39,34 +39,33 @@ instance (Num a, Eq a) => Num (PowS' a) where
     (f:ft, g:gt) -> PowS' (f*g:t) where PowS' t =  PowS' ft * gs + PowS' [f] * PowS' gt
     (_,_)        ->  PowS' []
     
-instance (Fractional a, Eq a) => Fractional (PowS' a) where
+instance (Fractional a, Eq a) => Fractional (PowS' a) where 
   fromRational c = PowS' [fromRational c]
 
   fs / gs = case (fromPowS fs, fromPowS gs) of
     (0:ft, 0:gt) -> PowS' ft / PowS' gt
-    (0:ft, gs)   -> PowS' (0:t) where PowS' t = PowS' ft / PowS' gs
-    (f:ft, g:gt) -> PowS' (f/g:t) where PowS' t = PowS' ft - PowS' [f/g] * PowS' gt / gs
+    (0:ft, gs)   -> PowS' (0:t) where PowS' t = PowS' ft / PowS' gs 
+    (f:ft, g:gt) -> PowS' (f/g:t) where PowS' t = (PowS' ft - PowS' [f/g] * PowS' gt) / gs 
     ([], 0:gt)   -> PowS' [] / PowS' gt
     ([], g:gt)   -> PowS' []
     (_,_)        -> error "improper power series division"
   
 infixr 9 #
-(#) :: (Eq a, Num a) => PowS' a -> PowS' a -> PowS' a
+(#) :: (Eq a, Num a) => PowS' a -> PowS' a -> PowS' a 
 fs # gs = case (fromPowS fs, fromPowS gs) of
-  (f:ft, gs@(0:gt)) -> PowS' (f:gt) * PowS' ft # PowS' gs
-  (f:ft, gs@(g:gt)) -> PowS' [f] + PowS' gs * PowS' ft # PowS' gs  -- ft must be polynomial
-  ([], _)           -> PowS' []
-  (f:_, [])         -> PowS' [f]
+  (f:ft, 0:gt) -> PowS' (f:t) where PowS' t = PowS' gt * PowS' ft # gs 
+  (f:ft, g:gt) -> PowS' [f] + gs * (PowS' ft # gs)  -- ft must be polynomial
+  ([], _)      -> PowS' []
+  (f:_, [])    -> PowS' [f]
 
-revert :: (Eq a, Fractional a) => PowS' a -> PowS' a
+revert :: (Eq a, Fractional a) => PowS' a -> PowS' a 
 revert fs = case fromPowS fs of
   (_:0:_) -> error "revert f where f'(0)==0"
-  -- (0:ft)  -> PowS' rs where rs =  0 : fromPowS (1 / PowS' ft # PowS' rs)
-  (0:ft)  -> PowS' (0:rs) where PowS' rs = 1 / PowS' ft # PowS' rs
+  (0:ft)  -> PowS' rs where rs = 0 : fromPowS (1 / PowS' ft # PowS' rs) 
   [f,f']  -> PowS' [-f/f',1/f']
   _       -> error "revert f where f(0)/=0"
 
-int :: (Fractional a) => PowS' a -> PowS' a
+int :: (Fractional a) => PowS' a -> PowS' a 
 int fs = PowS' (0 : zipWith (/) (fromPowS fs) (map fromInteger [1..]))
 
 diff :: (Num a) => PowS' a -> PowS' a
