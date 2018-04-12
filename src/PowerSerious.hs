@@ -16,12 +16,15 @@ type PowS2 = PowS' (PowS' Rational)
 
 instance {-# OVERLAPPING #-} Show (PowS' Rational) where
   show ps = intercalate " + " $ showPS $ fromPowS ps where
-    showPS ps = map (\p -> (show $ numerator p) ++ "/" ++ (show $ denominator p)) ps
+    showPS ps = map (\p -> if denominator p == 1
+                           then show $ numerator p
+                           else (show $ numerator p) ++ "/" ++ (show $ denominator p))
+                ps
 
 instance {-# OVERLAPPING #-} Show a => Show (PowS' (PowS' a)) where
-  show ps = intercalate "" $ splitOn " % 1" $
-            intercalate " + " $ splitOn "," $ init $ tail $
-            intercalate "\n" $ splitOn "],[" (init $ tail $ show $ (fromPowS <$> fromPowS ps))
+  show ps = substitute " + " "," $ substitute "\n" "],[" $ init $ tail $
+            substitute "" " % 1" $ init $ tail $ show $ (fromPowS <$> fromPowS ps) where
+    substitute x y z = intercalate x $ splitOn y $ z
 
 instance (Num a, Eq a) => Num (PowS' a) where
   fromInteger c = PowS' [fromInteger c]
