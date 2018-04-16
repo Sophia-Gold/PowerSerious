@@ -5,11 +5,19 @@
 
 module PowerSerious where
 
+import Control.Comonad
 import Data.List
 import Data.List.Split
 import Data.Ratio
 
 newtype PowS' a = PowS' { fromPowS :: [a] } deriving Eq
+
+instance Functor PowS' where
+  fmap f (PowS' a) = PowS' (fmap f a)
+
+instance Comonad PowS' where
+  extract (PowS' [a]) = a
+  duplicate a = PowS' [a]
 
 wu :: [a] -> (PowS' a -> PowS' a -> PowS' a) -> [a] -> [a]
 wu fs op gs = fromPowS $ op (PowS' fs) (PowS' gs)
@@ -23,7 +31,7 @@ instance {-# OVERLAPPING #-} Show (PowS' Rational) where
                            then show $ numerator p
                            else (show $ numerator p) ++ "/" ++ (show $ denominator p))
                 ps
-
+                
 instance {-# OVERLAPPING #-} Show a => Show (PowS' (PowS' a)) where
   show ps = substitute " + " "," $ substitute "\n" "],[" $ init $ tail $
             substitute "" " % 1" $ init $ tail $ show $ (fromPowS <$> fromPowS ps) where
