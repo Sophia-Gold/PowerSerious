@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE PatternSynonyms            #-}
 {-# OPTIONS_GHC -Wno-missing-methods    #-}
 
 module PowerSerious where
@@ -8,6 +9,7 @@ module PowerSerious where
 import Control.Comonad
 import Data.List
 import Data.List.Split
+import Data.Maybe
 import Data.Ratio
 
 newtype PowS' a = PowS' { fromPowS :: [a] } deriving Eq
@@ -25,6 +27,25 @@ instance ComonadApply PowS' where
 infixr 5 <:>
 (<:>) :: a -> PowS' a -> PowS' a
 f <:> fs = PowS' (f : (fromPowS fs))
+
+headPS :: PowS' a -> Maybe a
+headPS ps = listToMaybe $ fromPowS ps
+
+tailPS :: PowS' a -> Maybe (PowS' a)
+tailPS ps = case fromPowS ps of
+              [] -> Nothing
+              x -> Just (PowS' (tail x))
+
+splitPS :: PowS' a -> (Maybe a, Maybe (PowS' a))
+splitPS = (,) <$> headPS <*> tailPS
+
+pattern f :< ft <- (Just f, Just ft)
+pattern (:|) <- (Nothing,_)
+-- f >:< ft = case (f, ft) of
+--              (Just f, Just ft)  -> (f, ft)
+--              (Just f, Nothing)  -> (f, [])
+--              (Nothing, Just ft) -> ([], ft)
+--              _                  -> ([], [])
 
 wu :: [a] -> (a -> a -> a) -> [a] -> PowS' a
 wu fs op gs = liftW2 op (PowS' fs) (PowS' gs)
@@ -49,10 +70,15 @@ instance (Num a, Eq a) => Num (PowS' a) where
 
   negate fs = negate <$> fs
 
-  fs + gs = case (fromPowS fs, fromPowS gs) of 
-    (f:ft, g:gt) -> f+g <:> wu ft (+) gt
-    (fs, [])     -> PowS' fs
-    ([], gs)     -> PowS' gs
+  fs + gs = case (splitPS fs, splitPS gs) of
+    (f:<ft,g:<gt) -> f+g <:> ft+gt
+    (_,(:|))        -> fs
+    ((:|),_)        -> gs
+
+  -- fs + gs = case (fromPowS fs, fromPowS gs) of 
+  --   (f:ft, g:gt) -> f+g <:> wu ft (+) gt
+  --   (fs, [])     -> PowS' fs
+  --   ([], gs)     -> PowS' gs
 
   fs * gs = case (fromPowS fs, fromPowS gs) of
     (0:ft, gs)        -> 0 <:> wu ft (*) gs   -- caveat: 0*diverge = 0
