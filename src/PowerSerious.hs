@@ -18,10 +18,12 @@ instance Functor PowS' where
   fmap f (PowS' a) = PowS' (fmap f a)
 
 instance Comonad PowS' where
-  extract (PowS' [a]) = a
+  -- duplicate p ps = p <:> ps 
+  -- extract ps = PowS' (tail $ fromPowS ps) --infix operator for tail
   duplicate a = PowS' [a]
+  extract (PowS' [a]) = a  
 
-instance ComonadApply PowS' where 
+instance ComonadApply PowS' where
   f <@> a = extract f <$> a
 
 infixr 5 <:>
@@ -39,13 +41,13 @@ tailPS ps = case fromPowS ps of
 splitPS :: PowS' a -> (Maybe a, Maybe (PowS' a))
 splitPS = (,) <$> headPS <*> tailPS
 
-pattern f :< ft <- (Just f, Just ft)
-pattern (:|) <- (Nothing,_)
--- f >:< ft = case (f, ft) of
---              (Just f, Just ft)  -> (f, ft)
---              (Just f, Nothing)  -> (f, [])
---              (Nothing, Just ft) -> ([], ft)
---              _                  -> ([], [])
+-- splitPS :: PowS' a -> (a, PowS' a)
+-- splitPS ps = (head u, PowS' (tail u)) where u = fromPowS ps
+  
+pattern f :<>: ft <- (Just f, Just ft)
+pattern (:|:)     <- (Nothing, Nothing)
+
+-- pattern f :<>: ft <- (f, ft)
 
 wu :: [a] -> (a -> a -> a) -> [a] -> PowS' a
 wu fs op gs = liftW2 op (PowS' fs) (PowS' gs)
@@ -71,9 +73,9 @@ instance (Num a, Eq a) => Num (PowS' a) where
   negate fs = negate <$> fs
 
   fs + gs = case (splitPS fs, splitPS gs) of
-    (f:<ft,g:<gt) -> f+g <:> ft+gt
-    (_,(:|))        -> fs
-    ((:|),_)        -> gs
+    (f:<>:ft, g:<>:gt) -> f+g <:> ft+gt
+    (_, (:|:))         -> fs
+    ((:|:), _)         -> gs
 
   -- fs + gs = case (fromPowS fs, fromPowS gs) of 
   --   (f:ft, g:gt) -> f+g <:> wu ft (+) gt
