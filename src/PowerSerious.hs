@@ -41,7 +41,7 @@ splitPS = (,) <$> headPS <*> tailPS where
 -- splitPS ps = (head u, PowS (tail u)) where u = fromPowS ps
   
 pattern f :<>: ft <- (Just f, Just ft)
-pattern (:|:)     <- (Nothing, _)
+pattern Empty     <- (_, Nothing)
 
 instance {-# OVERLAPPING #-} Show (PowS Rational) where
   show ps = intercalate " + " $ showPS $ fromPowS ps where
@@ -62,14 +62,13 @@ instance {-# OVERLAPPING #-} Show a => Show (PowS (PowS a)) where
 
 instance (Num a, Eq a) => Num (PowS a) where
   fromInteger c = PowS [fromInteger c]
-  -- fromInteger c = duplicate $ fromInteger c
 
   negate fs = negate <$> fs
 
   fs + gs = case (splitPS fs, splitPS gs) of
     (f:<>:ft, g:<>:gt) -> f+g <:> ft+gt
-    (_, (:|:))         -> fs
-    ((:|:), _)         -> gs
+    (_, Empty)         -> fs
+    (Empty, _)         -> gs
 
   fs * gs = case (splitPS fs, splitPS gs) of
     (0:<>:ft, _)       -> 0 <:> ft * gs   -- caveat: 0*diverge = 0
@@ -79,14 +78,13 @@ instance (Num a, Eq a) => Num (PowS a) where
 
 instance (Fractional a, Eq a) => Fractional (PowS a) where 
   fromRational c = PowS [fromRational c]
-  -- fromRational c = duplicate $ fromRational c
 
   fs / gs = case (splitPS fs, splitPS gs) of
     (0:<>:ft, 0:<>:gt) -> ft / gt
     (0:<>:ft, _)       -> 0 <:> ft / gs 
     (f:<>:ft, g:<>:gt) -> f/g <:> (ft - PowS [f/g] * gt) / gs
-    ((:|:), 0:<>:gt)   -> PowS [] / gt
-    ((:|:), g:<>:gt)   -> PowS []
+    (Empty, 0:<>:gt)   -> PowS [] / gt
+    (Empty, g:<>:gt)   -> PowS []
     (_,_)              -> error "improper power series division"
   
 infixr 9 #
@@ -94,8 +92,8 @@ infixr 9 #
 fs # gs = case (splitPS fs, splitPS gs) of 
   (f:<>:ft, 0:<>:gt) -> f <:> gt * ft # gs
   (f:<>:ft, g:<>:gt) -> PowS [f] + gs * ft # gs  -- ft must be polynomial
-  ((:|:), _)         -> PowS []
-  (f:<>:_, (:|:))    -> PowS [f]
+  (Empty, _)         -> PowS []
+  (f:<>:_, Empty)    -> PowS [f]
 
 revert :: (Eq a, Fractional a) => PowS a -> PowS a 
 revert fs = case fromPowS fs of
