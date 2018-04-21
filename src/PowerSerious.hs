@@ -6,7 +6,6 @@
 
 module PowerSerious where
 
-import Control.Comonad
 import Data.List
 import Data.List.Split
 import Data.Maybe
@@ -16,15 +15,6 @@ newtype PowS a = PowS { fromPowS :: [a] } deriving Eq
 
 instance Functor PowS where
   fmap f (PowS a) = PowS (fmap f a)
-
--- instance Comonad PowS where
---   -- duplicate p ps = p <:> ps
---   -- extract ps = PowS (tail $ fromPowS ps) --infix operator for tail 
---   -- extract (PowS [a]) = a
---   -- duplicate a = PowS [a]
-  
--- instance ComonadApply PowS where
---   f <@> a = extract f <$> a
 
 infixr 5 <:>
 (<:>) :: a -> PowS a -> PowS a
@@ -36,9 +26,6 @@ splitPS = (,) <$> headPS <*> tailPS where
   tailPS ps = case fromPowS ps of
               [] -> Nothing
               x -> Just (PowS (tail x))
-
--- splitPS :: PowS a -> (a, PowS a)
--- splitPS ps = (head u, PowS (tail u)) where u = fromPowS ps
   
 pattern f :<>: ft <- (Just f, Just ft)
 pattern Empty     <- (_, Nothing)
@@ -56,7 +43,7 @@ instance {-# OVERLAPPING #-} Show a => Show (PowS [a]) where
     substitute x y z = intercalate x $ splitOn y $ z
                 
 instance {-# OVERLAPPING #-} Show a => Show (PowS (PowS a)) where
-  show ps = substitute " + " "," $ substitute "\n" "],[" $ init $ tail $
+  show ps = substitute " + " "," $ substitute "" "]" $ substitute "" "[" $ substitute "\n" "],[" $ init $ tail $
             substitute "" " % 1" $ init $ tail $ show $ (fromPowS <$> fromPowS ps) where
     substitute x y z = intercalate x $ splitOn y $ z
 

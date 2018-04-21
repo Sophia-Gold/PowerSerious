@@ -24,9 +24,9 @@ supernecklace' degree size = length . last . take degree $ iterate
                              (enumFromTo 1 size)
 
 -- degree 3
--- supernecklace :: Int -> PowS (PowS (PowS (Int)))
-supernecklace :: Int -> PowS [[Int]]
-supernecklace n = (tail . subsequences) <$> (concat . tail . subsequences) <$> PowS [[1..n]]
+supernecklace :: Int -> PowS (PowS [Int])
+supernecklace n = let f s = PowS (tail $ subsequences s)
+  in f <$> PowS (tail $ subsequences [1..n])
 
 main :: IO ()
 main = print $ takeS 10 pascal
